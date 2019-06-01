@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>&lt;no title&gt; &#8212; FlipkartWebScraper 1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">FlipkartWebScraper 1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <p>#import all classes here
+import scrapy
+import pickle
+from scrapy.crawler import CrawlerProcess
+import os
+import sys
+#base directory to refer later
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))</p>
+<p>#sys.argv[2] is the pickle directory entered in the command line,
+#so that we can make a new directory named that
+os.mkdir(str(sys.argv[2]))</p>
+<p>#item class
+class FlipkartwebscraperItem(scrapy.Item):</p>
+<blockquote>
+<div><p>name = scrapy.Field()
+price = scrapy.Field()
+rating = scrapy.Field()</p>
+</div></blockquote>
+<p>#spiderclass
+class laptopsSpider(scrapy.Spider):</p>
+<blockquote>
+<div><p>name = ‘laptops’
+#this is the number of laptops to be scraped entered in the command line
+count = int(sys.argv[1])
+page_number = 2
+all_laptops = {}
+allowed_domains = [‘www.flipkart.com’]
+start_urls = [‘<a class="reference external" href="https://www.flipkart.com/search?q=laptops&amp;otracker=search&amp;otracker1=search&amp;marketplace=FLIPKART&amp;as-show=on&amp;as=off&amp;page=1">https://www.flipkart.com/search?q=laptops&amp;otracker=search&amp;otracker1=search&amp;marketplace=FLIPKART&amp;as-show=on&amp;as=off&amp;page=1</a>’]</p>
+<dl>
+<dt>def parse(self, response):</dt><dd><p>#we use conditionals here for different use cases
+#this one is when we initially scrape the first page
+#during that time there is nothing in the all_laptops dict
+if len(laptopsSpider.all_laptops)==0:</p>
+<blockquote>
+<div><p>laptop = FlipkartwebscraperItem()
+name = response.css(‘div._3wU53n::text’).getall()
+price = response.css(‘div._1vC4OE._2rQ-NK::text’).getall()
+rating = response.css(‘div.hGSR34::text’).getall()
+laptop[‘name’] = name
+laptop[‘price’] = price
+laptop[‘rating’] = rating
+print (laptop)
+laptopsSpider.all_laptops.update(laptop)</p>
+</div></blockquote>
+<p>#this is for all other pages
+elif len(laptopsSpider.all_laptops.get(‘name’))&lt;=laptopsSpider.count:</p>
+<blockquote>
+<div><p>laptop = FlipkartwebscraperItem()
+name = response.css(‘div._3wU53n::text’).getall()
+price = response.css(‘div._1vC4OE._2rQ-NK::text’).getall()
+rating = response.css(‘div.hGSR34::text’).getall()
+laptop[‘name’] = name
+laptop[‘price’] = price
+laptop[‘rating’] = rating
+print (laptop)
+laptopsSpider.all_laptops.get(‘name’).extend(laptop.get(‘name’))
+laptopsSpider.all_laptops.get(‘price’).extend(laptop.get(‘price’))
+laptopsSpider.all_laptops.get(‘rating’).extend(laptop.get(‘rating’))</p>
+</div></blockquote>
+<p>#this is when we exceed the count given and have to remove the extra laptops
+else:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>for i in range(len(laptopsSpider.all_laptops.get(‘name’))-laptopsSpider.count):</dt><dd><p>laptopsSpider.all_laptops.get(‘name’).pop()
+laptopsSpider.all_laptops.get(‘price’).pop()
+laptopsSpider.all_laptops.get(‘rating’).pop()</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>#here we define link for the next page
+next_page = (‘<a class="reference external" href="https://www.flipkart.com/search?q=laptops&amp;otracker=search&amp;otracker1=search&amp;marketplace=FLIPKART&amp;as-show=off&amp;as=off&amp;page='+str(laptopsSpider.page_number">https://www.flipkart.com/search?q=laptops&amp;otracker=search&amp;otracker1=search&amp;marketplace=FLIPKART&amp;as-show=off&amp;as=off&amp;page=’+str(laptopsSpider.page_number</a>))
+#the reason we have 18 here is because flipkart has some weird issue due to which one
+#cannot scrape after page 18
+if laptopsSpider.page_number &lt;= 18:</p>
+<blockquote>
+<div><p>laptopsSpider.page_number +=1
+yield response.follow(next_page, callback = self.parse, dont_filter=True)</p>
+</div></blockquote>
+<p>#here we save all the laptop data from the dictionary to pickle file
+pickle_out = open(BASE_DIR+’/’+str(sys.argv[2])+’/laptops.txt’, ‘wb’)
+pickle.dump(laptopsSpider.all_laptops, pickle_out)
+pickle_out.close()</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>#this is to initiate the crawler
+initiate = CrawlerProcess()
+initiate.crawl(laptopsSpider)
+initiate.start()</p>
+<p>#this is to read the pickled data from txt file
+pickle_in = open(BASE_DIR+’/’+str(sys.argv[2])+’/laptops.txt’, ‘rb’)
+laptop_pickled_data = pickle.load(pickle_in)
+#prints the entire dictionary with name,price,rating of laptops
+print (laptop_pickled_data)
+#we print the number of laptops scraped as mentioned in the command line (just to verify)
+print (len(laptop_pickled_data.get(‘name’)))</p>
+<p>##css for price - div._1vC4OE._2rQ-NK
+##css for name - div._3wU53n
+##css for rating - div.hGSR34
+##css for next button - a._3fVaIS
+##css for entire block of one laptop - div._1UoZlX</p>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/code.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">FlipkartWebScraper 1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Shaurya Vijayvargiya.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.0.1.
+    </div>
+  </body>
+</html>
