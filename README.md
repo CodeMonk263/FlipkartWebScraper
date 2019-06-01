@@ -10,4 +10,4 @@ It creates a separate folder in which it saves the pickled data as a text file c
 
 The final code returns the pickled data as dictionary and also the count of the laptops scraped.
 
-For the documented version just check the index.html file inside the html folder
+For the documented version just check the index.html file inside the _build/html folder
